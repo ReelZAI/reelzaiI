@@ -51,25 +51,22 @@ function UpgradePrompt({ feature, setPage }) {
 
 
 async function callClaude(prompt) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
+      "Authorization": "Bearer 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",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: "llama-3.3-70b-versatile",
       max_tokens: 1000,
       messages: [{ role: "user", content: prompt }],
     }),
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
-  if (!data.content || !data.content[0]) throw new Error("Empty response from API");
-  const block = data.content[0];
-  if (block.type === "text") return block.text;
-  throw new Error("Unexpected content type: " + block.type);
+  if (!data.choices || !data.choices[0]) throw new Error("Empty response from API");
+  return data.choices[0].message.content;
 }
 
 function Btn({ children, variant = "primary", onClick, style = {}, small = false }) {
@@ -1382,5 +1379,3 @@ export default function App() {
     </div>
   );
 }
-
-
