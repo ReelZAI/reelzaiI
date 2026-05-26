@@ -27,6 +27,29 @@ const ACCOUNT_NAV = [
   { id: "settings", icon: "⚙️", label: "Settings" },
 ];
 
+// ─────────────────────────────────────────────
+// TIER CONFIGURATION  — single source of truth
+// ─────────────────────────────────────────────
+const TIER_CONFIG = {
+  free:    { credits: 50,    savedLimit: 5,   scriptsPerDay: 3, hooksPerDay: 3, hashtags: false, ideas: false, analytics: false, templates: false, label: "Free",    icon: "🆓", color: "#10b981" },
+  starter: { credits: 500,   savedLimit: 50,  scriptsPerDay: 999, hooksPerDay: 999, hashtags: true, ideas: true, analytics: false, templates: true,  label: "Starter", icon: "⚡", color: "#3b82f6" },
+  pro:     { credits: 5000,  savedLimit: 999, scriptsPerDay: 999, hooksPerDay: 999, hashtags: true, ideas: true, analytics: true,  templates: true,  label: "Pro",     icon: "👑", color: "#7c3aed" },
+  agency:  { credits: 99999, savedLimit: 999, scriptsPerDay: 999, hooksPerDay: 999, hashtags: true, ideas: true, analytics: true,  templates: true,  label: "Agency",  icon: "🏢", color: "#f59e0b" },
+};
+
+function UpgradePrompt({ feature, setPage }) {
+  return (
+    <Card style={{ textAlign: "center", padding: 60, border: `1px solid ${COLORS.accent}44` }}>
+      <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+      <div style={{ color: COLORS.text, fontSize: 20, fontWeight: 700, marginBottom: 8 }}>{feature} is a paid feature</div>
+      <div style={{ color: COLORS.textMuted, fontSize: 14, marginBottom: 24 }}>Upgrade your plan to unlock this and much more.</div>
+      <Btn onClick={() => setPage("subscription")} style={{ margin: "0 auto" }}>⚡ View Plans</Btn>
+    </Card>
+  );
+}
+
+
+
 async function callClaude(prompt) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -192,7 +215,7 @@ function Sidebar({ page, setPage, credits, collapsed, setCollapsed, onLogout }) 
             <div style={{ marginTop: 12 }}>
               <div style={{ fontWeight: 700, fontSize: 13, color: "#fff", marginBottom: 6 }}>{credits.toLocaleString()} credits remaining</div>
               <div style={{ height: 6, background: COLORS.border2, borderRadius: 3, overflow: "hidden" }}>
-                <div style={{ width: `${Math.min((credits / 50) * 100, 100)}%`, height: "100%", background: credits > 10 ? COLORS.accent : COLORS.red, borderRadius: 3 }} />
+                <div style={{ width: `${Math.min((credits / Math.max((TIER_CONFIG[plan] || TIER_CONFIG.free).credits, 1)) * 100, 100)}%`, height: "100%", background: credits > 10 ? COLORS.accent : COLORS.red, borderRadius: 3 }} />
               </div>
               <div style={{ textAlign: "right", fontSize: 11, color: COLORS.textMuted, marginTop: 3 }}>{credits > 0 ? `${credits} left` : "Out of credits"}</div>
             </div>
@@ -218,7 +241,7 @@ function TopBar({ credits, setPage, setCollapsed }) {
   );
 }
 
-function DashboardPage({ setPage, savedItems }) {
+function DashboardPage({ setPage, savedItems, plan = "free" }) {
   const TEMPLATES = [
     { color: "#e74c3c", icon: "🎯", name: "Listicle", desc: "Perfect for tips, tricks, and step-by-step guides" },
     { color: "#9b59b6", icon: "🧠", name: "Story Time", desc: "Share engaging stories that hook your audience" },
@@ -238,16 +261,26 @@ function DashboardPage({ setPage, savedItems }) {
   return (
     <div>
       <PageHeader title="Dashboard" subtitle="Create viral content 10x faster with AI 🚀" />
-      <div style={{ background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)", borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <span style={{ fontSize: 26 }}>👑</span>
-          <div>
-            <div style={{ fontWeight: 700, color: "#fff", fontSize: 15 }}>Pro Plan Active</div>
-            <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 13 }}>You have unlimited access to all features</div>
+      {(() => {
+        const tier = TIER_CONFIG[plan] || TIER_CONFIG.free;
+        const isFree = plan === "free";
+        return (
+          <div style={{ background: isFree ? "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)" : "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)", borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, border: isFree ? `1px solid ${COLORS.border2}` : "none" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <span style={{ fontSize: 26 }}>{tier.icon}</span>
+              <div>
+                <div style={{ fontWeight: 700, color: "#fff", fontSize: 15 }}>{tier.label} Plan{isFree ? "" : " Active"}</div>
+                <div style={{ color: isFree ? COLORS.textMuted : "rgba(255,255,255,0.75)", fontSize: 13 }}>
+                  {isFree ? "Upgrade to unlock all features and more credits" : "You have access to all included features"}
+                </div>
+              </div>
+            </div>
+            <Btn onClick={() => setPage("subscription")} style={{ background: isFree ? COLORS.accent : "rgba(255,255,255,0.15)", border: isFree ? "none" : "1px solid rgba(255,255,255,0.3)" }}>
+              {isFree ? "⚡ Upgrade Now" : `${tier.icon} Manage Plan`}
+            </Btn>
           </div>
-        </div>
-        <Btn onClick={() => setPage("subscription")} style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)" }}>👑 Manage Plan</Btn>
-      </div>
+        );
+      })()}
       <Card style={{ marginBottom: 24 }}>
         <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
           {[{ id: "scripts", label: "✨ Script Generator" }, { id: "hooks", label: "🪝 Hook Generator" }, { id: "hashtags", label: "# Hashtag Finder" }, { id: "ideas", label: "💡 Video Ideas" }].map(t => (
@@ -296,7 +329,7 @@ function DashboardPage({ setPage, savedItems }) {
   );
 }
 
-function ScriptsPage({ onSave }) {
+function ScriptsPage({ onSave, plan = "free", setPage }) {
   const [topic, setTopic] = useState("");
   const [tone, setTone] = useState("Motivational");
   const [duration, setDuration] = useState("60 Seconds");
@@ -306,19 +339,26 @@ function ScriptsPage({ onSave }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const tier = TIER_CONFIG[plan] || TIER_CONFIG.free;
+  const todayKey = "reelzai_scripts_" + new Date().toDateString();
+  const usedToday = () => { try { return parseInt(localStorage.getItem(todayKey) || "0"); } catch { return 0; } };
+  const bumpUsage = () => { try { localStorage.setItem(todayKey, String(usedToday() + 1)); } catch {} };
+
   const generate = async () => {
     if (!topic.trim()) return;
+    if (usedToday() >= tier.scriptsPerDay) { setError(`Daily limit of ${tier.scriptsPerDay} scripts reached on the ${tier.label} plan. Upgrade for more.`); return; }
     setLoading(true); setResult(null); setError(null);
     try {
       const text = await callClaude(`Write a viral ${duration} ${tone.toLowerCase()} video script about: "${topic}". ${template !== "None" ? `Use a ${template} format.` : ""} Language: ${language}. Format with [HOOK], [MAIN CONTENT], and [CTA] sections. Make it engaging and shareable.`);
       setResult(text);
+      bumpUsage();
     } catch (e) { setError("Failed to generate: " + e.message); }
     setLoading(false);
   };
 
   return (
     <div>
-      <PageHeader title="✏️ Script Generator" subtitle="Generate viral video scripts powered by AI" />
+      <PageHeader title="✏️ Script Generator" subtitle="Generate viral video scripts powered by AI" actions={plan === "free" && <div style={{fontSize:12,color:COLORS.textMuted,background:COLORS.card,border:`1px solid ${COLORS.border2}`,borderRadius:8,padding:"5px 10px"}}>{usedToday()}/{tier.scriptsPerDay} scripts used today</div>} />
       <div style={{ ...rGrid(), gap: 16, marginBottom: 16 }}>
         <Card>
           <h3 style={{ margin: "0 0 16px", color: COLORS.text, fontSize: 15 }}>Script Settings</h3>
@@ -358,7 +398,7 @@ function ScriptsPage({ onSave }) {
   );
 }
 
-function HooksPage({ onSave }) {
+function HooksPage({ onSave, plan = "free", setPage }) {
   const [topic, setTopic] = useState("");
   const [style, setStyle] = useState("Question");
   const [count, setCount] = useState("5");
@@ -366,12 +406,19 @@ function HooksPage({ onSave }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const tier = TIER_CONFIG[plan] || TIER_CONFIG.free;
+  const todayKey = "reelzai_hooks_" + new Date().toDateString();
+  const usedToday = () => { try { return parseInt(localStorage.getItem(todayKey) || "0"); } catch { return 0; } };
+  const bumpUsage = () => { try { localStorage.setItem(todayKey, String(usedToday() + 1)); } catch {} };
+
   const generate = async () => {
     if (!topic.trim()) return;
+    if (usedToday() >= tier.hooksPerDay) { setError(`Daily limit of ${tier.hooksPerDay} hook sets reached on the ${tier.label} plan. Upgrade for more.`); return; }
     setLoading(true); setResult(null); setError(null);
     try {
       const text = await callClaude(`Generate ${count} viral video hooks for a video about: "${topic}". Style: ${style}. Each hook should grab attention within the first 3 seconds. Number them and make each one punchy and compelling. Include a brief explanation of why each hook works.`);
       setResult(text);
+      bumpUsage();
     } catch (e) { setError("Failed to generate: " + e.message); }
     setLoading(false);
   };
@@ -386,7 +433,7 @@ function HooksPage({ onSave }) {
 
   return (
     <div>
-      <PageHeader title="🪝 Hook Generator" subtitle="Create attention-grabbing video openings that stop the scroll" />
+      <PageHeader title="🪝 Hook Generator" subtitle="Create attention-grabbing video openings that stop the scroll" actions={plan === "free" && <div style={{fontSize:12,color:COLORS.textMuted,background:COLORS.card,border:`1px solid ${COLORS.border2}`,borderRadius:8,padding:"5px 10px"}}>{usedToday()}/{tier.hooksPerDay} hooks used today</div>} />
       <div style={{ ...rGrid(), gap: 16, marginBottom: 20 }}>
         <Card>
           <h3 style={{ margin: "0 0 16px", color: COLORS.text, fontSize: 15 }}>Hook Settings</h3>
@@ -420,7 +467,7 @@ function HooksPage({ onSave }) {
   );
 }
 
-function HashtagsPage({ onSave }) {
+function HashtagsPage({ onSave, plan = "free", setPage }) {
   const [topic, setTopic] = useState("");
   const [platform, setPlatform] = useState("TikTok");
   const [niche, setNiche] = useState("General");
@@ -438,6 +485,15 @@ function HashtagsPage({ onSave }) {
     setLoading(false);
   };
 
+  const hashtagTier = TIER_CONFIG[plan] || TIER_CONFIG.free;
+  if (!hashtagTier.hashtags) {
+    return (
+      <div>
+        <PageHeader title="# Hashtag Finder" subtitle="Discover the perfect hashtags to maximize your reach" />
+        <UpgradePrompt feature="Hashtag Finder" setPage={setPage} />
+      </div>
+    );
+  }
   return (
     <div>
       <PageHeader title="# Hashtag Finder" subtitle="Discover the perfect hashtags to maximize your reach" />
@@ -483,7 +539,7 @@ function HashtagsPage({ onSave }) {
   );
 }
 
-function IdeasPage({ onSave }) {
+function IdeasPage({ onSave, plan = "free", setPage }) {
   const [niche, setNiche] = useState("");
   const [frequency, setFrequency] = useState("Daily");
   const [platform, setPlatform] = useState("TikTok");
@@ -501,6 +557,15 @@ function IdeasPage({ onSave }) {
     setLoading(false);
   };
 
+  const ideasTier = TIER_CONFIG[plan] || TIER_CONFIG.free;
+  if (!ideasTier.ideas) {
+    return (
+      <div>
+        <PageHeader title="💡 Video Ideas" subtitle="Never run out of content with AI-powered idea generation" />
+        <UpgradePrompt feature="Video Ideas" setPage={setPage} />
+      </div>
+    );
+  }
   return (
     <div>
       <PageHeader title="💡 Video Ideas" subtitle="Never run out of content with AI-powered idea generation" />
@@ -546,7 +611,7 @@ function IdeasPage({ onSave }) {
   );
 }
 
-function AnalyticsPage() {
+function AnalyticsPage({ plan = "free", setPage }) {
   const stats = [
     { label: "Total Views", value: "248,392", change: "+12.4%", icon: "👁️", color: COLORS.accent },
     { label: "Followers Gained", value: "3,847", change: "+8.2%", icon: "👥", color: COLORS.green },
@@ -560,6 +625,15 @@ function AnalyticsPage() {
     { title: "Stop Doing This at the Gym", views: "21,004", engagement: "9.1%", type: "Controversial" },
     { title: "My Daily Routine (Honest)", views: "18,773", engagement: "6.3%", type: "POV" },
   ];
+  const analyticsTier = TIER_CONFIG[plan] || TIER_CONFIG.free;
+  if (!analyticsTier.analytics) {
+    return (
+      <div>
+        <PageHeader title="📊 Analytics" subtitle="Track your content performance and growth" />
+        <UpgradePrompt feature="Analytics" setPage={setPage} />
+      </div>
+    );
+  }
   return (
     <div>
       <PageHeader title="📊 Analytics" subtitle="Track your content performance and growth" />
@@ -634,13 +708,13 @@ function AnalyticsPage() {
   );
 }
 
-function SavedPage({ savedItems, onDelete }) {
+function SavedPage({ savedItems, onDelete, plan = "free", setPage }) {
   const [filter, setFilter] = useState("All");
   const types = ["All", "Script", "Hooks", "Hashtags", "Ideas"];
   const filtered = filter === "All" ? savedItems : savedItems.filter(s => s.type === filter);
   return (
     <div>
-      <PageHeader title="🔖 Saved Items" subtitle={`${savedItems.length} saved pieces of content`} />
+      <PageHeader title="🔖 Saved Items" subtitle={`${savedItems.length} saved pieces of content`} actions={plan === "free" && <div style={{fontSize:12,color:COLORS.textMuted,background:COLORS.card,border:`1px solid ${COLORS.border2}`,borderRadius:8,padding:"5px 10px"}}>{savedItems.length}/{TIER_CONFIG.free.savedLimit} saves used <span onClick={() => setPage("subscription")} style={{color:COLORS.accent,cursor:"pointer",marginLeft:4}}>Upgrade →</span></div>} />
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {types.map(t => (
           <button key={t} onClick={() => setFilter(t)} style={{ background: filter === t ? COLORS.accent : COLORS.card, border: `1px solid ${filter === t ? COLORS.accent : COLORS.border}`, color: filter === t ? "#fff" : COLORS.textMuted, borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontSize: 13, fontWeight: 500, fontFamily: "inherit" }}>
@@ -678,7 +752,7 @@ function SavedPage({ savedItems, onDelete }) {
   );
 }
 
-function TemplatesPage({ setPage }) {
+function TemplatesPage({ setPage, plan = "free" }) {
   const [selected, setSelected] = useState(null);
   const [cat, setCat] = useState("All");
   const ALL_TEMPLATES = [
@@ -694,6 +768,15 @@ function TemplatesPage({ setPage }) {
   ];
   const CATS = ["All", "Educational", "Entertainment", "Lifestyle", "Engagement", "Transformation"];
   const filtered = cat === "All" ? ALL_TEMPLATES : ALL_TEMPLATES.filter(t => t.category === cat);
+  const templatesTier = TIER_CONFIG[plan] || TIER_CONFIG.free;
+  if (!templatesTier.templates) {
+    return (
+      <div>
+        <PageHeader title="⊟ Templates" subtitle="Pre-built frameworks for viral content" />
+        <UpgradePrompt feature="Templates" setPage={setPage} />
+      </div>
+    );
+  }
   return (
     <div>
       <PageHeader title="⊟ Templates" subtitle="Pre-built frameworks for viral content" />
@@ -725,7 +808,7 @@ function TemplatesPage({ setPage }) {
   );
 }
 
-function ProfilePage({ user = {}, onLogout }) {
+function ProfilePage({ user = {}, onLogout, plan = "free" }) {
   const [name, setName] = useState(user.name || "");
   const [email, setEmail] = useState(user.email || "");
   const [username, setUsername] = useState("@" + (user.name || "user").toLowerCase().replace(/\s+/g, ""));
@@ -740,7 +823,7 @@ function ProfilePage({ user = {}, onLogout }) {
             <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, #f59e0b, #ef4444)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, margin: "0 auto 14px" }}>👤</div>
             <div style={{ fontWeight: 700, color: COLORS.text, fontSize: 16, marginBottom: 4 }}>{name}</div>
             <div style={{ color: COLORS.textMuted, fontSize: 13, marginBottom: 12 }}>{username}</div>
-            <Badge color={COLORS.accent}>Pro Plan</Badge>
+            <Badge color={(TIER_CONFIG[plan] || TIER_CONFIG.free).color}>{(TIER_CONFIG[plan] || TIER_CONFIG.free).icon} {(TIER_CONFIG[plan] || TIER_CONFIG.free).label} Plan</Badge>
           </Card>
           <Card>
             <h3 style={{ margin: "0 0 14px", color: COLORS.text, fontSize: 14 }}>📊 Stats</h3>
@@ -773,13 +856,13 @@ function ProfilePage({ user = {}, onLogout }) {
   );
 }
 
-function SubscriptionPage({ onAddCredits }) {
+function SubscriptionPage({ onAddCredits, currentPlan = "free", onUpgrade }) {
   const [billing, setBilling] = useState("monthly");
   const [bought, setBought] = useState(null);
   const plans = [
-    { name: "Starter", price: { monthly: 9, yearly: 7 }, credits: "500", features: ["500 credits/mo", "Script Generator", "Hook Generator", "Email Support"], color: COLORS.blue },
-    { name: "Pro", price: { monthly: 29, yearly: 23 }, credits: "5,000", features: ["5,000 credits/mo", "All generators", "Analytics Dashboard", "Priority Support", "Custom Templates"], color: COLORS.accent, popular: true },
-    { name: "Agency", price: { monthly: 79, yearly: 63 }, credits: "Unlimited", features: ["Unlimited credits", "Everything in Pro", "Team Collaboration", "White Label", "Dedicated Support", "API Access"], color: COLORS.gold },
+    { id: "starter", name: "Starter", price: { monthly: 9, yearly: 7 }, credits: "500", features: ["500 credits/mo", "Script Generator", "Hook Generator", "Hashtag Finder", "Video Ideas", "Email Support"], color: COLORS.blue },
+    { id: "pro", name: "Pro", price: { monthly: 29, yearly: 23 }, credits: "5,000", features: ["5,000 credits/mo", "All generators", "Analytics Dashboard", "Priority Support", "Custom Templates"], color: COLORS.accent, popular: true },
+    { id: "agency", name: "Agency", price: { monthly: 79, yearly: 63 }, credits: "Unlimited", features: ["Unlimited credits", "Everything in Pro", "Team Collaboration", "White Label", "Dedicated Support", "API Access"], color: COLORS.gold },
   ];
   const CREDIT_PACKS = [
     { label: "Starter Pack", credits: 100, price: 4.99, icon: "⚡", color: COLORS.blue, bonus: "" },
@@ -865,8 +948,8 @@ function SubscriptionPage({ onAddCredits }) {
                 </div>
               ))}
             </div>
-            <Btn style={{ width: "100%", justifyContent: "center", background: plan.popular ? plan.color : "transparent", border: `1px solid ${plan.color}`, color: plan.popular ? "#fff" : plan.color }}>
-              {plan.name === "Pro" ? "Current Plan" : "Upgrade"}
+            <Btn onClick={() => { if (plan.id !== currentPlan) onUpgrade(plan.id); }} style={{ width: "100%", justifyContent: "center", background: plan.id === currentPlan ? "transparent" : (plan.popular ? plan.color : "transparent"), border: `1px solid ${plan.id === currentPlan ? COLORS.green : plan.color}`, color: plan.id === currentPlan ? COLORS.green : (plan.popular ? "#fff" : plan.color) }}>
+              {plan.id === currentPlan ? "✓ Current Plan" : "Upgrade"}
             </Btn>
           </div>
         ))}
@@ -935,6 +1018,108 @@ function MobileBottomNav({ page, setPage }) {
   );
 }
 
+function PlanSelectScreen({ onSelect }) {
+  const plans = [
+    {
+      id: "free",
+      icon: "🆓",
+      name: "Free",
+      price: "£0",
+      sub: "forever",
+      color: COLORS.green,
+      desc: "Get started with the basics",
+      features: ["50 credits to start", "Script Generator", "Hook Generator", "Limited saves (5)"],
+      locked: ["Hashtag Finder", "Video Ideas", "Analytics", "Templates"],
+      cta: "Continue Free",
+      ghost: true,
+    },
+    {
+      id: "starter",
+      icon: "⚡",
+      name: "Starter",
+      price: "£9",
+      sub: "/month",
+      color: COLORS.blue,
+      desc: "Perfect for solo creators",
+      features: ["500 credits/month", "All generators", "Hashtag Finder", "Video Ideas", "Email Support"],
+      locked: [],
+      cta: "Get Starter",
+      ghost: false,
+    },
+    {
+      id: "pro",
+      icon: "👑",
+      name: "Pro",
+      price: "£29",
+      sub: "/month",
+      color: COLORS.accent,
+      desc: "For serious content creators",
+      features: ["5,000 credits/month", "Everything in Starter", "Analytics Dashboard", "Priority Support", "Custom Templates"],
+      locked: [],
+      cta: "Get Pro",
+      ghost: false,
+      popular: true,
+    },
+  ];
+
+  return (
+    <div style={{ minHeight: "100vh", background: COLORS.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', sans-serif", padding: 20 }}>
+      <div style={{ width: "100%", maxWidth: 860 }}>
+        {/* Header */}
+        <div style={{ textAlign: "center", marginBottom: 36 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: "linear-gradient(135deg, #7c3aed, #4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, margin: "0 auto 12px" }}>🎬</div>
+          <div style={{ fontWeight: 800, fontSize: 26, color: "#fff" }}>Reel<span style={{ color: COLORS.accent }}>ZAI</span></div>
+          <div style={{ color: COLORS.textMuted, fontSize: 14, marginTop: 6 }}>Choose your plan to get started</div>
+          <div style={{ display: "inline-block", marginTop: 10, background: COLORS.accentSoft, border: `1px solid ${COLORS.accent}44`, borderRadius: 8, padding: "4px 14px", fontSize: 12, color: COLORS.accent, fontWeight: 600 }}>
+            🎉 Account created! Pick a plan below
+          </div>
+        </div>
+
+        {/* Plan cards */}
+        <div style={{ display: "grid", gridTemplateColumns: isMobileScreen() ? "1fr" : "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
+          {plans.map(plan => (
+            <div key={plan.id} style={{ background: COLORS.card, border: `2px solid ${plan.popular ? plan.color : COLORS.border}`, borderRadius: 16, padding: 24, position: "relative", display: "flex", flexDirection: "column" }}>
+              {plan.popular && (
+                <div style={{ position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)", background: plan.color, color: "#fff", borderRadius: 6, padding: "3px 14px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>MOST POPULAR</div>
+              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: plan.color + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{plan.icon}</div>
+                <div>
+                  <div style={{ fontWeight: 700, color: COLORS.text, fontSize: 16 }}>{plan.name}</div>
+                  <div style={{ fontSize: 12, color: COLORS.textMuted }}>{plan.desc}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 3, marginBottom: 16 }}>
+                <span style={{ fontSize: 32, fontWeight: 800, color: plan.color }}>{plan.price}</span>
+                <span style={{ fontSize: 13, color: COLORS.textMuted }}>{plan.sub}</span>
+              </div>
+              <div style={{ flex: 1, marginBottom: 20 }}>
+                {plan.features.map(f => (
+                  <div key={f} style={{ display: "flex", gap: 8, marginBottom: 7, fontSize: 13, color: COLORS.textDim }}>
+                    <span style={{ color: COLORS.green, flexShrink: 0 }}>✓</span>{f}
+                  </div>
+                ))}
+                {plan.locked.map(f => (
+                  <div key={f} style={{ display: "flex", gap: 8, marginBottom: 7, fontSize: 13, color: COLORS.textMuted, opacity: 0.5 }}>
+                    <span style={{ flexShrink: 0 }}>🔒</span>{f}
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => onSelect(plan.id)} style={{ width: "100%", padding: "12px 0", background: plan.ghost ? "transparent" : plan.color, border: `2px solid ${plan.color}`, color: plan.ghost ? plan.color : "#fff", borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+              >{plan.cta}</button>
+            </div>
+          ))}
+        </div>
+        <div style={{ textAlign: "center", fontSize: 12, color: COLORS.textMuted }}>
+          You can upgrade at any time from your account settings · No credit card required for Free plan
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AuthScreen({ onAuth }) {
   const [mode, setMode] = useState("login"); // "login" | "signup"
   const [name, setName] = useState("");
@@ -956,15 +1141,16 @@ function AuthScreen({ onAuth }) {
         const users = JSON.parse(localStorage.getItem("reelzai_users") || "{}");
         if (mode === "signup") {
           if (users[email]) { setError("An account with this email already exists."); setLoading(false); return; }
-          users[email] = { name, password, credits: 50 };
+          users[email] = { name, password, credits: 50, plan: "free" };
           localStorage.setItem("reelzai_users", JSON.stringify(users));
-          const session = { email, name, credits: 50 };
+          const session = { email, name, credits: 50, plan: "free", newSignup: true };
           localStorage.setItem("reelzai_session", JSON.stringify(session));
           onAuth(session);
         } else {
           if (!users[email] || users[email].password !== password) { setError("Incorrect email or password."); setLoading(false); return; }
           const credits = users[email].credits ?? 50;
-          const session = { email, name: users[email].name, credits };
+          const plan = users[email].plan ?? "free";
+          const session = { email, name: users[email].name, credits, plan };
           localStorage.setItem("reelzai_session", JSON.stringify(session));
           onAuth(session);
         }
@@ -1063,6 +1249,18 @@ export default function App() {
       return session?.credits ?? 50;
     } catch { return 50; }
   });
+  const [plan, setPlan] = useState(() => {
+    try {
+      const session = JSON.parse(localStorage.getItem("reelzai_session"));
+      return session?.plan ?? "free";
+    } catch { return "free"; }
+  });
+  const [showPlanSelect, setShowPlanSelect] = useState(() => {
+    try {
+      const session = JSON.parse(localStorage.getItem("reelzai_session"));
+      return session?.newSignup === true;
+    } catch { return false; }
+  });
   const [savedItems, setSavedItems] = useState([]);
   const [collapsed, setCollapsed] = useState(true);
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1024);
@@ -1073,33 +1271,59 @@ export default function App() {
     return () => window.removeEventListener("resize", handler);
   }, []);
 
-  // Persist credits to localStorage whenever they change
+  // Persist credits and plan to localStorage whenever they change
   useEffect(() => {
     if (!user) return;
     try {
       const session = JSON.parse(localStorage.getItem("reelzai_session") || "{}");
       session.credits = credits;
+      session.plan = plan;
+      session.newSignup = false;
       localStorage.setItem("reelzai_session", JSON.stringify(session));
-      // Also update the user store
       const users = JSON.parse(localStorage.getItem("reelzai_users") || "{}");
       if (users[user.email]) {
         users[user.email].credits = credits;
+        users[user.email].plan = plan;
         localStorage.setItem("reelzai_users", JSON.stringify(users));
       }
     } catch {}
-  }, [credits, user]);
+  }, [credits, plan, user]);
 
   const isMobile = windowWidth < 768;
 
-  if (!user) return <AuthScreen onAuth={(u) => { setUser(u); setCredits(u.credits ?? 50); }} />;
+  if (!user) return <AuthScreen onAuth={(u) => { setUser(u); setCredits(u.credits ?? 50); setPlan(u.plan ?? "free"); setShowPlanSelect(u.newSignup === true); }} />;
+
+  if (showPlanSelect) return <PlanSelectScreen onSelect={(selectedPlan) => {
+    setPlan(selectedPlan);
+    setShowPlanSelect(false);
+    const tier = TIER_CONFIG[selectedPlan] || TIER_CONFIG.free;
+    setCredits(tier.credits);
+    // persist
+    try {
+      const session = JSON.parse(localStorage.getItem("reelzai_session") || "{}");
+      session.plan = selectedPlan; session.credits = tier.credits;
+      localStorage.setItem("reelzai_session", JSON.stringify(session));
+      const users = JSON.parse(localStorage.getItem("reelzai_users") || "{}");
+      if (session.email && users[session.email]) { users[session.email].plan = selectedPlan; users[session.email].credits = tier.credits; localStorage.setItem("reelzai_users", JSON.stringify(users)); }
+    } catch {}
+  }} />;
 
   const handleLogout = () => {
     localStorage.removeItem("reelzai_session");
     setUser(null);
+    setPlan("free");
+    setShowPlanSelect(false);
   };
 
   const handleSave = (item) => {
-    setSavedItems(prev => [item, ...prev]);
+    const tier = TIER_CONFIG[plan] || TIER_CONFIG.free;
+    setSavedItems(prev => {
+      if (prev.length >= tier.savedLimit) {
+        alert(`You've reached the ${tier.savedLimit}-item save limit on the ${tier.label} plan. Upgrade to save more.`);
+        return prev;
+      }
+      return [item, ...prev];
+    });
     setCredits(c => Math.max(0, c - 10));
   };
   const handleDelete = (i) => setSavedItems(prev => prev.filter((_, idx) => idx !== i));
@@ -1109,16 +1333,16 @@ export default function App() {
   };
 
   const pages = {
-    dashboard: <DashboardPage setPage={setPage} savedItems={savedItems} />,
-    scripts: <ScriptsPage onSave={handleSave} />,
-    hooks: <HooksPage onSave={handleSave} />,
-    hashtags: <HashtagsPage onSave={handleSave} />,
-    ideas: <IdeasPage onSave={handleSave} />,
-    analytics: <AnalyticsPage />,
-    saved: <SavedPage savedItems={savedItems} onDelete={handleDelete} />,
-    templates: <TemplatesPage setPage={setPage} />,
-    profile: <ProfilePage user={user} onLogout={handleLogout} />,
-    subscription: <SubscriptionPage onAddCredits={handleAddCredits} />,
+    dashboard: <DashboardPage setPage={setPage} savedItems={savedItems} plan={plan} />,
+    scripts: <ScriptsPage onSave={handleSave} plan={plan} setPage={setPage} />,
+    hooks: <HooksPage onSave={handleSave} plan={plan} setPage={setPage} />,
+    hashtags: <HashtagsPage onSave={handleSave} plan={plan} setPage={setPage} />,
+    ideas: <IdeasPage onSave={handleSave} plan={plan} setPage={setPage} />,
+    analytics: <AnalyticsPage plan={plan} setPage={setPage} />,
+    saved: <SavedPage savedItems={savedItems} onDelete={handleDelete} plan={plan} setPage={setPage} />,
+    templates: <TemplatesPage setPage={setPage} plan={plan} />,
+    profile: <ProfilePage user={user} onLogout={handleLogout} plan={plan} />,
+    subscription: <SubscriptionPage onAddCredits={handleAddCredits} currentPlan={plan} onUpgrade={(p) => setPlan(p)} />,
     settings: <SettingsPage />,
   };
 
