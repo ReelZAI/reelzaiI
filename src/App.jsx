@@ -1,5 +1,8 @@
 import { useState } from "react";
 
+const isMobileScreen = () => typeof window !== "undefined" && window.innerWidth < 768;
+const rGrid = (cols = "1fr 1fr") => ({ display: "grid", gridTemplateColumns: isMobileScreen() ? "1fr" : cols });
+
 const COLORS = {
   bg: "#09090f", sidebar: "#0d0d18", card: "#0f0f1c", cardHover: "#141425",
   border: "#1e1e30", border2: "#252535", accent: "#7c3aed", accentHover: "#6d28d9",
@@ -129,7 +132,7 @@ function GeneratedResult({ title, content, onSave }) {
   );
 }
 
-function Sidebar({ page, setPage, credits, collapsed, setCollapsed }) {
+function Sidebar({ page, setPage, credits, collapsed, setCollapsed, onLogout }) {
   const w = collapsed ? 64 : 210;
   return (
     <aside style={{ width: w, minWidth: w, background: COLORS.sidebar, borderRight: `1px solid ${COLORS.border}`, display: "flex", flexDirection: "column", padding: "20px 0", flexShrink: 0, overflowY: "auto", overflowX: "hidden", transition: "width 0.25s ease, min-width 0.25s ease" }}>
@@ -171,6 +174,14 @@ function Sidebar({ page, setPage, credits, collapsed, setCollapsed }) {
             {!collapsed && item.label}
           </div>
         ))}
+        <div onClick={onLogout} title={collapsed ? "Logout" : ""}
+          style={{ display: "flex", alignItems: "center", gap: collapsed ? 0 : 10, justifyContent: collapsed ? "center" : "flex-start", padding: collapsed ? "10px 0" : "8px 12px", borderRadius: 8, marginBottom: 2, color: COLORS.red, cursor: "pointer", fontSize: 14, transition: "all 0.15s" }}
+          onMouseEnter={e => e.currentTarget.style.background = "#ef444422"}
+          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+        >
+          <span style={{ fontSize: 18 }}>🚪</span>
+          {!collapsed && "Log Out"}
+        </div>
       </div>
       {!collapsed && (
         <div style={{ padding: "12px 12px 0" }}>
@@ -253,7 +264,7 @@ function DashboardPage({ setPage, savedItems }) {
           </div>
           <button onClick={() => setPage("templates")} style={{ background: "none", border: "none", color: COLORS.accent, fontSize: 13, cursor: "pointer" }}>View all templates →</button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobileScreen() ? "1fr" : "repeat(3, 1fr)", gap: 14 }}>
           {TEMPLATES.map(t => (
             <div key={t.name} style={{ background: "#141420", border: `1px solid ${COLORS.border2}`, borderRadius: 10, padding: 16 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
@@ -308,7 +319,7 @@ function ScriptsPage({ onSave }) {
   return (
     <div>
       <PageHeader title="✏️ Script Generator" subtitle="Generate viral video scripts powered by AI" />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+      <div style={{ ...rGrid(), gap: 16, marginBottom: 16 }}>
         <Card>
           <h3 style={{ margin: "0 0 16px", color: COLORS.text, fontSize: 15 }}>Script Settings</h3>
           <div style={{ marginBottom: 16 }}>
@@ -376,7 +387,7 @@ function HooksPage({ onSave }) {
   return (
     <div>
       <PageHeader title="🪝 Hook Generator" subtitle="Create attention-grabbing video openings that stop the scroll" />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+      <div style={{ ...rGrid(), gap: 16, marginBottom: 20 }}>
         <Card>
           <h3 style={{ margin: "0 0 16px", color: COLORS.text, fontSize: 15 }}>Hook Settings</h3>
           <div style={{ marginBottom: 16 }}>
@@ -430,7 +441,7 @@ function HashtagsPage({ onSave }) {
   return (
     <div>
       <PageHeader title="# Hashtag Finder" subtitle="Discover the perfect hashtags to maximize your reach" />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+      <div style={{ ...rGrid(), gap: 16, marginBottom: 20 }}>
         <Card>
           <h3 style={{ margin: "0 0 16px", color: COLORS.text, fontSize: 15 }}>Hashtag Settings</h3>
           <div style={{ marginBottom: 16 }}>
@@ -493,7 +504,7 @@ function IdeasPage({ onSave }) {
   return (
     <div>
       <PageHeader title="💡 Video Ideas" subtitle="Never run out of content with AI-powered idea generation" />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+      <div style={{ ...rGrid(), gap: 16, marginBottom: 20 }}>
         <Card>
           <h3 style={{ margin: "0 0 16px", color: COLORS.text, fontSize: 15 }}>Idea Generator</h3>
           <div style={{ marginBottom: 16 }}>
@@ -552,7 +563,7 @@ function AnalyticsPage() {
   return (
     <div>
       <PageHeader title="📊 Analytics" subtitle="Track your content performance and growth" />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobileScreen() ? "1fr 1fr" : "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
         {stats.map(s => (
           <Card key={s.label}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
@@ -564,7 +575,7 @@ function AnalyticsPage() {
           </Card>
         ))}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobileScreen() ? "1fr" : "2fr 1fr", gap: 16, marginBottom: 24 }}>
         <Card>
           <h3 style={{ margin: "0 0 20px", color: COLORS.text, fontSize: 15 }}>📈 Views Over Time (Last 30 Days)</h3>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 120 }}>
@@ -691,7 +702,7 @@ function TemplatesPage({ setPage }) {
           <button key={c} onClick={() => setCat(c)} style={{ background: cat === c ? COLORS.accent : COLORS.card, border: `1px solid ${cat === c ? COLORS.accent : COLORS.border}`, color: cat === c ? "#fff" : COLORS.textMuted, borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontSize: 13, fontWeight: 500, fontFamily: "inherit" }}>{c}</button>
         ))}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobileScreen() ? "1fr" : "repeat(3, 1fr)", gap: 16 }}>
         {filtered.map(t => (
           <Card key={t.name} style={{ cursor: "pointer", border: `1px solid ${selected?.name === t.name ? COLORS.accent : COLORS.border}` }} onClick={() => setSelected(selected?.name === t.name ? null : t)}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
@@ -714,16 +725,16 @@ function TemplatesPage({ setPage }) {
   );
 }
 
-function ProfilePage() {
-  const [name, setName] = useState("Alex Johnson");
-  const [email, setEmail] = useState("alex@example.com");
-  const [username, setUsername] = useState("@alexcreates");
-  const [bio, setBio] = useState("Content creator focused on finance and lifestyle. 500k+ followers across platforms.");
+function ProfilePage({ user = {}, onLogout }) {
+  const [name, setName] = useState(user.name || "");
+  const [email] = useState(user.email || "");
+  const [username, setUsername] = useState("@" + (user.name || "user").toLowerCase().replace(/\s+/g, ""));
+  const [bio, setBio] = useState("Content creator powered by ReelZAI.");
   const [saved, setSaved] = useState(false);
   return (
     <div>
       <PageHeader title="👤 Profile" subtitle="Manage your account information" />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobileScreen() ? "1fr" : "1fr 2fr", gap: 20 }}>
         <div>
           <Card style={{ textAlign: "center", marginBottom: 16 }}>
             <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, #f59e0b, #ef4444)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, margin: "0 auto 14px" }}>👤</div>
@@ -778,7 +789,7 @@ function SubscriptionPage() {
           ))}
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, marginBottom: 28 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobileScreen() ? "1fr" : "repeat(3, 1fr)", gap: 20, marginBottom: 28 }}>
         {plans.map(plan => (
           <div key={plan.name} style={{ background: COLORS.card, border: `2px solid ${plan.popular ? plan.color : COLORS.border}`, borderRadius: 14, padding: 24, position: "relative", transform: plan.popular ? "scale(1.02)" : "scale(1)" }}>
             {plan.popular && <div style={{ position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)", background: plan.color, color: "#fff", borderRadius: 6, padding: "3px 12px", fontSize: 12, fontWeight: 700 }}>MOST POPULAR</div>}
@@ -825,7 +836,7 @@ function SettingsPage() {
   return (
     <div>
       <PageHeader title="⚙️ Settings" subtitle="Customize your ReelZAI experience" />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div style={{ ...rGrid(), gap: 20 }}>
         <Card>
           <h3 style={{ margin: "0 0 4px", color: COLORS.text, fontSize: 15 }}>🔔 Notifications</h3>
           <Toggle label="Email Notifications" desc="Receive updates via email" settingKey="emailNotifs" />
@@ -845,11 +856,157 @@ function SettingsPage() {
   );
 }
 
+
+const MOBILE_NAV = [
+  { id: "dashboard", icon: "⊞", label: "Home" },
+  { id: "scripts", icon: "📄", label: "Scripts" },
+  { id: "hooks", icon: "🪝", label: "Hooks" },
+  { id: "hashtags", icon: "#", label: "Tags" },
+  { id: "ideas", icon: "💡", label: "Ideas" },
+];
+
+function MobileBottomNav({ page, setPage }) {
+  return (
+    <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: COLORS.sidebar, borderTop: `1px solid ${COLORS.border}`, display: "flex", zIndex: 100, paddingBottom: "env(safe-area-inset-bottom)" }}>
+      {MOBILE_NAV.map(item => (
+        <div key={item.id} onClick={() => setPage(item.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "10px 4px 8px", cursor: "pointer", color: page === item.id ? COLORS.accent : COLORS.textMuted, borderTop: page === item.id ? `2px solid ${COLORS.accent}` : "2px solid transparent" }}>
+          <span style={{ fontSize: 20, marginBottom: 2 }}>{item.icon}</span>
+          <span style={{ fontSize: 10, fontWeight: 600 }}>{item.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AuthScreen({ onAuth }) {
+  const [mode, setMode] = useState("login"); // "login" | "signup"
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Simple in-memory "user store" using localStorage
+  const handleSubmit = () => {
+    setError("");
+    if (!email.trim() || !password.trim()) { setError("Please fill in all fields."); return; }
+    if (mode === "signup" && !name.trim()) { setError("Please enter your name."); return; }
+    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+
+    setLoading(true);
+    setTimeout(() => {
+      try {
+        const users = JSON.parse(localStorage.getItem("reelzai_users") || "{}");
+        if (mode === "signup") {
+          if (users[email]) { setError("An account with this email already exists."); setLoading(false); return; }
+          users[email] = { name, password };
+          localStorage.setItem("reelzai_users", JSON.stringify(users));
+          localStorage.setItem("reelzai_session", JSON.stringify({ email, name }));
+          onAuth({ email, name });
+        } else {
+          if (!users[email] || users[email].password !== password) { setError("Incorrect email or password."); setLoading(false); return; }
+          localStorage.setItem("reelzai_session", JSON.stringify({ email, name: users[email].name }));
+          onAuth({ email, name: users[email].name });
+        }
+      } catch (e) {
+        setError("Something went wrong. Please try again.");
+      }
+      setLoading(false);
+    }, 600);
+  };
+
+  const inputStyle = {
+    width: "100%", background: "#141420", border: `1px solid ${COLORS.border2}`,
+    borderRadius: 10, padding: "12px 14px", color: COLORS.text, fontSize: 15,
+    outline: "none", fontFamily: "inherit", boxSizing: "border-box", marginBottom: 14,
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: COLORS.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', sans-serif", padding: 20 }}>
+      <div style={{ width: "100%", maxWidth: 420 }}>
+        {/* Logo */}
+        <div style={{ textAlign: "center", marginBottom: 36 }}>
+          <div style={{ width: 60, height: 60, borderRadius: 16, background: "linear-gradient(135deg, #7c3aed, #4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, margin: "0 auto 14px" }}>🎬</div>
+          <div style={{ fontWeight: 800, fontSize: 28, color: "#fff" }}>Reel<span style={{ color: COLORS.accent }}>ZAI</span></div>
+          <div style={{ color: COLORS.textMuted, fontSize: 14, marginTop: 4 }}>AI-Powered Viral Reels</div>
+        </div>
+
+        {/* Card */}
+        <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 18, padding: 32 }}>
+          {/* Tabs */}
+          <div style={{ display: "flex", background: "#141420", borderRadius: 10, padding: 4, marginBottom: 28, gap: 4 }}>
+            {["login", "signup"].map(m => (
+              <button key={m} onClick={() => { setMode(m); setError(""); }} style={{ flex: 1, background: mode === m ? COLORS.accent : "transparent", border: "none", color: mode === m ? "#fff" : COLORS.textMuted, borderRadius: 8, padding: "9px 0", cursor: "pointer", fontWeight: 600, fontSize: 14, fontFamily: "inherit", transition: "all 0.15s" }}>
+                {m === "login" ? "Log In" : "Sign Up"}
+              </button>
+            ))}
+          </div>
+
+          {mode === "signup" && (
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="Full name" style={inputStyle}
+              onFocus={e => e.target.style.borderColor = COLORS.accent}
+              onBlur={e => e.target.style.borderColor = COLORS.border2} />
+          )}
+          <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" type="email" style={inputStyle}
+            onFocus={e => e.target.style.borderColor = COLORS.accent}
+            onBlur={e => e.target.style.borderColor = COLORS.border2} />
+          <input value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" type="password" style={{ ...inputStyle, marginBottom: 6 }}
+            onFocus={e => e.target.style.borderColor = COLORS.accent}
+            onBlur={e => e.target.style.borderColor = COLORS.border2}
+            onKeyDown={e => e.key === "Enter" && handleSubmit()} />
+
+          {error && <div style={{ color: COLORS.red, fontSize: 13, marginBottom: 14, padding: "8px 12px", background: "#ef444411", borderRadius: 8, border: "1px solid #ef444433" }}>{error}</div>}
+
+          <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", background: COLORS.accent, border: "none", color: "#fff", borderRadius: 10, padding: "13px 0", fontWeight: 700, fontSize: 16, cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: loading ? 0.7 : 1, marginTop: 8, transition: "opacity 0.15s" }}>
+            {loading ? "⏳ Please wait..." : mode === "login" ? "🚀 Log In" : "✨ Create Account"}
+          </button>
+
+          {mode === "login" && (
+            <div style={{ textAlign: "center", marginTop: 16, fontSize: 13, color: COLORS.textMuted }}>
+              Don't have an account?{" "}
+              <span onClick={() => { setMode("signup"); setError(""); }} style={{ color: COLORS.accent, cursor: "pointer", fontWeight: 600 }}>Sign up free</span>
+            </div>
+          )}
+          {mode === "signup" && (
+            <div style={{ textAlign: "center", marginTop: 16, fontSize: 13, color: COLORS.textMuted }}>
+              Already have an account?{" "}
+              <span onClick={() => { setMode("login"); setError(""); }} style={{ color: COLORS.accent, cursor: "pointer", fontWeight: 600 }}>Log in</span>
+            </div>
+          )}
+        </div>
+
+        <div style={{ textAlign: "center", marginTop: 20, fontSize: 12, color: COLORS.textMuted }}>
+          By continuing, you agree to our Terms of Service
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("reelzai_session")); } catch { return null; }
+  });
   const [page, setPage] = useState("dashboard");
   const [credits, setCredits] = useState(2450);
   const [savedItems, setSavedItems] = useState([]);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1024);
+
+  useState(() => {
+    const handler = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  });
+
+  const isMobile = windowWidth < 768;
+
+  if (!user) return <AuthScreen onAuth={setUser} />;
+
+  const handleLogout = () => {
+    localStorage.removeItem("reelzai_session");
+    setUser(null);
+  };
 
   const handleSave = (item) => {
     setSavedItems(prev => [item, ...prev]);
@@ -866,14 +1023,37 @@ export default function App() {
     analytics: <AnalyticsPage />,
     saved: <SavedPage savedItems={savedItems} onDelete={handleDelete} />,
     templates: <TemplatesPage setPage={setPage} />,
-    profile: <ProfilePage />,
+    profile: <ProfilePage user={user} onLogout={handleLogout} />,
     subscription: <SubscriptionPage />,
     settings: <SettingsPage />,
   };
 
+  if (isMobile) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: COLORS.bg, color: COLORS.text, fontFamily: "'Segoe UI', sans-serif", overflow: "hidden" }}>
+        <div style={{ background: COLORS.sidebar, borderBottom: `1px solid ${COLORS.border}`, padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 7, background: "linear-gradient(135deg, #7c3aed, #4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🎬</div>
+            <div style={{ fontWeight: 800, fontSize: 16, color: "#fff" }}>Reel<span style={{ color: COLORS.accent }}>ZAI</span></div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border2}`, borderRadius: 8, padding: "5px 10px", fontSize: 13, color: COLORS.text }}>
+              <span style={{ color: COLORS.gold }}>⚡</span> {credits.toLocaleString()}
+            </div>
+            <div onClick={() => setPage("profile")} style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #f59e0b, #ef4444)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>👤</div>
+          </div>
+        </div>
+        <main style={{ flex: 1, overflowY: "auto", padding: "16px", paddingBottom: "80px" }}>
+          {pages[page] || pages.dashboard}
+        </main>
+        <MobileBottomNav page={page} setPage={setPage} />
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: "flex", height: "100vh", background: COLORS.bg, color: COLORS.text, fontFamily: "'Segoe UI', sans-serif", overflow: "hidden" }}>
-      <Sidebar page={page} setPage={setPage} credits={credits} collapsed={collapsed} setCollapsed={setCollapsed} />
+      <Sidebar page={page} setPage={setPage} credits={credits} collapsed={collapsed} setCollapsed={setCollapsed} onLogout={handleLogout} />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <TopBar credits={credits} setPage={setPage} setCollapsed={setCollapsed} />
         <main style={{ flex: 1, overflowY: "auto", padding: "28px 32px" }}>
@@ -883,3 +1063,4 @@ export default function App() {
     </div>
   );
 }
+p
