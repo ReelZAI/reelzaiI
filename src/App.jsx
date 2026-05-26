@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const isMobileScreen = () => typeof window !== "undefined" && window.innerWidth < 768;
 const rGrid = (cols = "1fr 1fr") => ({ display: "grid", gridTemplateColumns: isMobileScreen() ? "1fr" : cols });
@@ -190,11 +190,11 @@ function Sidebar({ page, setPage, credits, collapsed, setCollapsed, onLogout }) 
             <div style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 12 }}>Generate unlimited content</div>
             <button onClick={() => setPage("subscription")} style={{ width: "100%", padding: "8px 0", background: COLORS.accent, color: "#fff", border: "none", borderRadius: 7, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>⚡ Buy Credits</button>
             <div style={{ marginTop: 12 }}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: "#fff", marginBottom: 6 }}>{credits.toLocaleString()} / 5,000</div>
+              <div style={{ fontWeight: 700, fontSize: 13, color: "#fff", marginBottom: 6 }}>{credits.toLocaleString()} credits remaining</div>
               <div style={{ height: 6, background: COLORS.border2, borderRadius: 3, overflow: "hidden" }}>
-                <div style={{ width: `${(credits / 5000) * 100}%`, height: "100%", background: COLORS.accent, borderRadius: 3 }} />
+                <div style={{ width: `${Math.min((credits / 50) * 100, 100)}%`, height: "100%", background: credits > 10 ? COLORS.accent : COLORS.red, borderRadius: 3 }} />
               </div>
-              <div style={{ textAlign: "right", fontSize: 11, color: COLORS.textMuted, marginTop: 3 }}>{Math.round((credits / 5000) * 100)}%</div>
+              <div style={{ textAlign: "right", fontSize: 11, color: COLORS.textMuted, marginTop: 3 }}>{credits > 0 ? `${credits} left` : "Out of credits"}</div>
             </div>
           </div>
         </div>
@@ -727,7 +727,7 @@ function TemplatesPage({ setPage }) {
 
 function ProfilePage({ user = {}, onLogout }) {
   const [name, setName] = useState(user.name || "");
-  const [email] = useState(user.email || "");
+  const [email, setEmail] = useState(user.email || "");
   const [username, setUsername] = useState("@" + (user.name || "user").toLowerCase().replace(/\s+/g, ""));
   const [bio, setBio] = useState("Content creator powered by ReelZAI.");
   const [saved, setSaved] = useState(false);
@@ -763,33 +763,90 @@ function ProfilePage({ user = {}, onLogout }) {
             <label style={{ display: "block", fontSize: 13, color: COLORS.textDim, marginBottom: 6 }}>Bio</label>
             <textarea value={bio} onChange={e => setBio(e.target.value)} style={{ width: "100%", minHeight: 80, background: "#141420", border: `1px solid ${COLORS.border2}`, borderRadius: 8, padding: "10px 12px", color: COLORS.textDim, fontSize: 14, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
           </div>
-          <Btn onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 2000); }}>{saved ? "✓ Saved!" : "💾 Save Changes"}</Btn>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <Btn onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 2000); }}>{saved ? "✓ Saved!" : "💾 Save Changes"}</Btn>
+            <Btn variant="danger" onClick={onLogout}>🚪 Sign Out</Btn>
+          </div>
         </Card>
       </div>
     </div>
   );
 }
 
-function SubscriptionPage() {
+function SubscriptionPage({ onAddCredits }) {
   const [billing, setBilling] = useState("monthly");
+  const [bought, setBought] = useState(null);
   const plans = [
     { name: "Starter", price: { monthly: 9, yearly: 7 }, credits: "500", features: ["500 credits/mo", "Script Generator", "Hook Generator", "Email Support"], color: COLORS.blue },
     { name: "Pro", price: { monthly: 29, yearly: 23 }, credits: "5,000", features: ["5,000 credits/mo", "All generators", "Analytics Dashboard", "Priority Support", "Custom Templates"], color: COLORS.accent, popular: true },
     { name: "Agency", price: { monthly: 79, yearly: 63 }, credits: "Unlimited", features: ["Unlimited credits", "Everything in Pro", "Team Collaboration", "White Label", "Dedicated Support", "API Access"], color: COLORS.gold },
   ];
+  const CREDIT_PACKS = [
+    { label: "Starter Pack", credits: 100, price: 4.99, icon: "⚡", color: COLORS.blue, bonus: "" },
+    { label: "Creator Pack", credits: 300, price: 11.99, icon: "🔥", color: COLORS.accent, bonus: "Save 20%" },
+    { label: "Pro Pack", credits: 750, price: 24.99, icon: "💎", color: COLORS.gold, bonus: "Best Value" },
+  ];
+
+  const handleBuyPack = (pack) => {
+    onAddCredits(pack.credits);
+    setBought(pack.label);
+    setTimeout(() => setBought(null), 3000);
+  };
+
   return (
     <div>
-      <PageHeader title="💳 Subscription" subtitle="Choose the plan that fits your content creation needs" />
-      <div style={{ textAlign: "center", marginBottom: 28 }}>
+      <PageHeader title="💳 Subscription & Credits" subtitle="Top up credits or choose a plan that fits your needs" />
+
+      {/* One-time credit packs */}
+      <div style={{ marginBottom: 36 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+          <span style={{ fontSize: 20 }}>⚡</span>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: COLORS.text }}>Buy Credits</h2>
+          <span style={{ fontSize: 12, color: COLORS.textMuted, marginLeft: 4 }}>One-time top-up, no subscription needed</span>
+        </div>
+        {bought && (
+          <div style={{ background: "#10b98115", border: "1px solid #10b98133", borderRadius: 10, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10, color: "#10b981", fontWeight: 600, fontSize: 14 }}>
+            ✅ {bought} purchased! Credits added to your account.
+          </div>
+        )}
+        <div style={{ display: "grid", gridTemplateColumns: isMobileScreen() ? "1fr" : "repeat(3, 1fr)", gap: 16 }}>
+          {CREDIT_PACKS.map(pack => (
+            <div key={pack.label} style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 24, position: "relative", display: "flex", flexDirection: "column", gap: 12 }}>
+              {pack.bonus && (
+                <div style={{ position: "absolute", top: -10, right: 16, background: pack.color, color: "#fff", borderRadius: 6, padding: "2px 10px", fontSize: 11, fontWeight: 700 }}>{pack.bonus}</div>
+              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: pack.color + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>{pack.icon}</div>
+                <div>
+                  <div style={{ fontWeight: 700, color: COLORS.text, fontSize: 15 }}>{pack.label}</div>
+                  <div style={{ color: pack.color, fontWeight: 800, fontSize: 22 }}>{pack.credits} <span style={{ fontSize: 13, color: COLORS.textMuted, fontWeight: 500 }}>credits</span></div>
+                </div>
+              </div>
+              <div style={{ fontSize: 12, color: COLORS.textMuted }}>~{Math.round(pack.credits / 10)} scripts or {pack.credits} hook sets</div>
+              <Btn onClick={() => handleBuyPack(pack)} style={{ justifyContent: "center", background: pack.color, border: "none", color: "#fff" }}>
+                Buy for ${pack.price}
+              </Btn>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Subscription plans */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+        <span style={{ fontSize: 20 }}>👑</span>
+        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: COLORS.text }}>Monthly Plans</h2>
+        <span style={{ fontSize: 12, color: COLORS.textMuted, marginLeft: 4 }}>Recurring credits every month</span>
+      </div>
+      <div style={{ textAlign: "center", marginBottom: 24 }}>
         <div style={{ display: "inline-flex", background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 4, gap: 4 }}>
           {["monthly", "yearly"].map(b => (
             <button key={b} onClick={() => setBilling(b)} style={{ background: billing === b ? COLORS.accent : "transparent", border: "none", color: billing === b ? "#fff" : COLORS.textMuted, borderRadius: 7, padding: "7px 20px", cursor: "pointer", fontWeight: 600, fontSize: 14, fontFamily: "inherit" }}>
-              {b.charAt(0).toUpperCase() + b.slice(1)}
+              {b === "yearly" ? "Yearly (Save 20%)" : "Monthly"}
             </button>
           ))}
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: isMobileScreen() ? "1fr" : "repeat(3, 1fr)", gap: 20, marginBottom: 28 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobileScreen() ? "1fr" : "repeat(3, 1fr)", gap: 20 }}>
         {plans.map(plan => (
           <div key={plan.name} style={{ background: COLORS.card, border: `2px solid ${plan.popular ? plan.color : COLORS.border}`, borderRadius: 14, padding: 24, position: "relative", transform: plan.popular ? "scale(1.02)" : "scale(1)" }}>
             {plan.popular && <div style={{ position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)", background: plan.color, color: "#fff", borderRadius: 6, padding: "3px 12px", fontSize: 12, fontWeight: 700 }}>MOST POPULAR</div>}
@@ -899,14 +956,17 @@ function AuthScreen({ onAuth }) {
         const users = JSON.parse(localStorage.getItem("reelzai_users") || "{}");
         if (mode === "signup") {
           if (users[email]) { setError("An account with this email already exists."); setLoading(false); return; }
-          users[email] = { name, password };
+          users[email] = { name, password, credits: 50 };
           localStorage.setItem("reelzai_users", JSON.stringify(users));
-          localStorage.setItem("reelzai_session", JSON.stringify({ email, name }));
-          onAuth({ email, name });
+          const session = { email, name, credits: 50 };
+          localStorage.setItem("reelzai_session", JSON.stringify(session));
+          onAuth(session);
         } else {
           if (!users[email] || users[email].password !== password) { setError("Incorrect email or password."); setLoading(false); return; }
-          localStorage.setItem("reelzai_session", JSON.stringify({ email, name: users[email].name }));
-          onAuth({ email, name: users[email].name });
+          const credits = users[email].credits ?? 50;
+          const session = { email, name: users[email].name, credits };
+          localStorage.setItem("reelzai_session", JSON.stringify(session));
+          onAuth(session);
         }
       } catch (e) {
         setError("Something went wrong. Please try again.");
@@ -942,6 +1002,15 @@ function AuthScreen({ onAuth }) {
             ))}
           </div>
 
+          {mode === "signup" && (
+            <div style={{ background: "#10b98115", border: "1px solid #10b98133", borderRadius: 10, padding: "10px 14px", marginBottom: 18, display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 20 }}>🎁</span>
+              <div>
+                <div style={{ fontWeight: 700, color: "#10b981", fontSize: 13 }}>50 Free Credits on Sign Up</div>
+                <div style={{ color: COLORS.textMuted, fontSize: 12, marginTop: 1 }}>No credit card required — start creating immediately</div>
+              </div>
+            </div>
+          )}
           {mode === "signup" && (
             <input value={name} onChange={e => setName(e.target.value)} placeholder="Full name" style={inputStyle}
               onFocus={e => e.target.style.borderColor = COLORS.accent}
@@ -988,20 +1057,41 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem("reelzai_session")); } catch { return null; }
   });
   const [page, setPage] = useState("dashboard");
-  const [credits, setCredits] = useState(2450);
+  const [credits, setCredits] = useState(() => {
+    try {
+      const session = JSON.parse(localStorage.getItem("reelzai_session"));
+      return session?.credits ?? 50;
+    } catch { return 50; }
+  });
   const [savedItems, setSavedItems] = useState([]);
   const [collapsed, setCollapsed] = useState(true);
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1024);
 
-  useState(() => {
+  useEffect(() => {
     const handler = () => setWindowWidth(window.innerWidth);
     window.addEventListener("resize", handler);
     return () => window.removeEventListener("resize", handler);
-  });
+  }, []);
+
+  // Persist credits to localStorage whenever they change
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const session = JSON.parse(localStorage.getItem("reelzai_session") || "{}");
+      session.credits = credits;
+      localStorage.setItem("reelzai_session", JSON.stringify(session));
+      // Also update the user store
+      const users = JSON.parse(localStorage.getItem("reelzai_users") || "{}");
+      if (users[user.email]) {
+        users[user.email].credits = credits;
+        localStorage.setItem("reelzai_users", JSON.stringify(users));
+      }
+    } catch {}
+  }, [credits, user]);
 
   const isMobile = windowWidth < 768;
 
-  if (!user) return <AuthScreen onAuth={setUser} />;
+  if (!user) return <AuthScreen onAuth={(u) => { setUser(u); setCredits(u.credits ?? 50); }} />;
 
   const handleLogout = () => {
     localStorage.removeItem("reelzai_session");
@@ -1014,6 +1104,10 @@ export default function App() {
   };
   const handleDelete = (i) => setSavedItems(prev => prev.filter((_, idx) => idx !== i));
 
+  const handleAddCredits = (amount) => {
+    setCredits(c => c + amount);
+  };
+
   const pages = {
     dashboard: <DashboardPage setPage={setPage} savedItems={savedItems} />,
     scripts: <ScriptsPage onSave={handleSave} />,
@@ -1024,7 +1118,7 @@ export default function App() {
     saved: <SavedPage savedItems={savedItems} onDelete={handleDelete} />,
     templates: <TemplatesPage setPage={setPage} />,
     profile: <ProfilePage user={user} onLogout={handleLogout} />,
-    subscription: <SubscriptionPage />,
+    subscription: <SubscriptionPage onAddCredits={handleAddCredits} />,
     settings: <SettingsPage />,
   };
 
@@ -1037,10 +1131,11 @@ export default function App() {
             <div style={{ fontWeight: 800, fontSize: 16, color: "#fff" }}>Reel<span style={{ color: COLORS.accent }}>ZAI</span></div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border2}`, borderRadius: 8, padding: "5px 10px", fontSize: 13, color: COLORS.text }}>
+            <div onClick={() => setPage("subscription")} style={{ background: COLORS.card, border: `1px solid ${COLORS.border2}`, borderRadius: 8, padding: "5px 10px", fontSize: 13, color: COLORS.text, cursor: "pointer" }}>
               <span style={{ color: COLORS.gold }}>⚡</span> {credits.toLocaleString()}
             </div>
             <div onClick={() => setPage("profile")} style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #f59e0b, #ef4444)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>👤</div>
+            <div onClick={handleLogout} title="Sign Out" style={{ width: 32, height: 32, borderRadius: 8, background: "#ef444422", border: "1px solid #ef444433", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🚪</div>
           </div>
         </div>
         <main style={{ flex: 1, overflowY: "auto", padding: "16px", paddingBottom: "80px" }}>
@@ -1063,4 +1158,3 @@ export default function App() {
     </div>
   );
 }
-p
